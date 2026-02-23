@@ -99,4 +99,49 @@ describe('fetchContractAbi', () => {
       'https://api.testnet.hiro.so/v2/contracts/interface/ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM/my-contract',
     );
   });
+
+  it('uses the correct URL for devnet', async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => sampleAbi,
+    } as Response);
+
+    await fetchContractAbi('devnet', 'ST123', 'my-contract');
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      'http://localhost:3999/v2/contracts/interface/ST123/my-contract',
+    );
+  });
+
+  it('uses the correct URL for custom network', async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => sampleAbi,
+    } as Response);
+
+    await fetchContractAbi('https://custom.example.com', 'SP123', 'my-contract');
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      'https://custom.example.com/v2/contracts/interface/SP123/my-contract',
+    );
+  });
+
+  it('throws on network error', async () => {
+    vi.mocked(globalThis.fetch).mockRejectedValueOnce(new TypeError('fetch failed'));
+
+    await expect(
+      fetchContractAbi('mainnet', 'SP123', 'broken'),
+    ).rejects.toThrow();
+  });
+
+  it('throws on invalid JSON response', async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => { throw new SyntaxError('Unexpected token'); },
+    } as unknown as Response);
+
+    await expect(
+      fetchContractAbi('mainnet', 'SP123', 'broken'),
+    ).rejects.toThrow();
+  });
 });
