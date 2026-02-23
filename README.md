@@ -1,5 +1,9 @@
 # @satoshai/abi-cli
 
+[![npm version](https://img.shields.io/npm/v/@satoshai/abi-cli)](https://www.npmjs.com/package/@satoshai/abi-cli)
+[![CI](https://github.com/satoshai-dev/abi-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/satoshai-dev/abi-cli/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 CLI tool to fetch ABIs from deployed Stacks blockchain contracts and output TypeScript-ready definitions (`as const`).
 
 ## Install
