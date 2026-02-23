@@ -1,4 +1,4 @@
-import type { ClarityAbi } from './types.js';
+import type { ClarityAbi } from '@stacks/transactions';
 import { resolveNetwork } from './network.js';
 
 export interface ContractId {

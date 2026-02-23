@@ -1,4 +1,4 @@
-import type { ClarityAbi } from '../../src/types.js';
+import type { ClarityAbi } from '@stacks/transactions';
 
 /**
  * Sample ABI matching the SIP-009 nft-trait interface.
@@ -60,6 +60,4 @@ export const sampleAbi: ClarityAbi = {
   maps: [],
   fungible_tokens: [],
   non_fungible_tokens: [],
-  epoch: '2.1',
-  clarity_version: 'Clarity2',
 };

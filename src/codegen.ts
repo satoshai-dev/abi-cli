@@ -1,4 +1,4 @@
-import type { ClarityAbi } from './types.js';
+import type { ClarityAbi } from '@stacks/transactions';
 
 /**
  * Generate a TypeScript file exporting the ABI as a const assertion.
