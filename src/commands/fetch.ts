@@ -1,6 +1,7 @@
 import { defineCommand } from 'citty';
 import { parseContractId, fetchContractAbi } from '../fetcher.js';
 import { generateTypescript, generateJson, defaultFilename } from '../codegen.js';
+import { resolveNetwork } from '../network.js';
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
@@ -45,6 +46,21 @@ export const fetchCommand = defineCommand({
     }
 
     const contractIds = args.contract.split(',').map((s) => s.trim());
+
+    if (args.output && contractIds.length > 1) {
+      throw new Error(
+        '--output cannot be used with multiple contracts. Omit --output to write separate files, or use --stdout.',
+      );
+    }
+
+    if (args.stdout && contractIds.length > 1) {
+      throw new Error(
+        '--stdout cannot be used with multiple contracts. Fetch one contract at a time with --stdout.',
+      );
+    }
+
+    // Validate network before the loop to fail fast
+    resolveNetwork(args.network);
 
     for (const contractId of contractIds) {
       const { address, name } = parseContractId(contractId);
