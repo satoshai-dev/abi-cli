@@ -1,3 +1,0 @@
-# @satoshai/abi-cli
-
-## Changelog
