@@ -39,17 +39,26 @@
     "clean": "rm -rf dist",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "pnpm build && changeset publish",
-    "prepare": "husky"
+    "prepublishOnly": "pnpm build",
+    "release": "changeset publish",
+    "prepare": "husky || true"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
-    "@stacks/transactions": "^7.3.1",
     "citty": "^0.1.6"
   },
+  "peerDependencies": {
+    "@stacks/transactions": ">=7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@stacks/transactions": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@stacks/transactions": "^7.3.1",
     "@changesets/cli": "^2.29.8",
     "@commitlint/cli": "^20.4.1",
     "@commitlint/config-conventional": "^20.4.1",
