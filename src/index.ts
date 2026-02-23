@@ -3,11 +3,11 @@ export type {
   ClarityAbiFunction,
   ClarityAbiVariable,
   ClarityAbiMap,
-  ClarityAbiFungibleToken,
-  ClarityAbiNonFungibleToken,
+  ClarityAbiTypeFungibleToken,
+  ClarityAbiTypeNonFungibleToken,
   ClarityAbiType,
   ClarityAbiTypePrimitive,
-} from './types.js';
+} from '@stacks/transactions';
 
 export { resolveNetwork } from './network.js';
 export type { NetworkName } from './network.js';
