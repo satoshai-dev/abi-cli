@@ -50,6 +50,18 @@ export const fetchCommand = defineCommand({
 
     const contractIds = args.contract.split(',').map((s) => s.trim());
 
+    if (args.output && contractIds.length > 1) {
+      throw new Error(
+        '--output cannot be used with multiple contracts. Omit --output to write separate files, or use --stdout.',
+      );
+    }
+
+    if (args.stdout && contractIds.length > 1) {
+      throw new Error(
+        '--stdout cannot be used with multiple contracts. Fetch one contract at a time with --stdout.',
+      );
+    }
+
     for (const contractId of contractIds) {
       const { address, name } = parseContractId(contractId);
 
