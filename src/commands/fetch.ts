@@ -1,6 +1,7 @@
 import { defineCommand } from 'citty';
 import { parseContractId, fetchContractAbi } from '../fetcher.js';
 import { generateTypescript, generateJson, defaultFilename } from '../codegen.js';
+import { resolveNetwork } from '../network.js';
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
@@ -43,6 +44,9 @@ export const fetchCommand = defineCommand({
     if (format !== 'ts' && format !== 'json') {
       throw new Error(`Invalid format "${format}". Use "ts" or "json".`);
     }
+
+    // Validate network early to fail fast before fetching any contracts
+    resolveNetwork(args.network);
 
     const contractIds = args.contract.split(',').map((s) => s.trim());
 
