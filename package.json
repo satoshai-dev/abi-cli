@@ -53,11 +53,6 @@
   "peerDependencies": {
     "@stacks/transactions": ">=7.0.0"
   },
-  "peerDependenciesMeta": {
-    "@stacks/transactions": {
-      "optional": true
-    }
-  },
   "devDependencies": {
     "@stacks/transactions": "^7.3.1",
     "@changesets/cli": "^2.29.8",
