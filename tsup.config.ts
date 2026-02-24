@@ -1,4 +1,5 @@
 import { defineConfig } from 'tsup';
+import pkg from './package.json';
 
 export default defineConfig([
   {
@@ -14,6 +15,7 @@ export default defineConfig([
   {
     entry: ['src/cli.ts'],
     format: ['esm'],
+    define: { __VERSION__: JSON.stringify(pkg.version) },
     banner: { js: '#!/usr/bin/env node' },
     sourcemap: true,
     splitting: false,
