@@ -31,7 +31,15 @@ export async function fetchContractAbi(
   const baseUrl = resolveNetwork(network);
   const url = `${baseUrl}/v2/contracts/interface/${address}/${name}`;
 
-  const response = await fetch(url);
+  let response: Response;
+  try {
+    response = await fetch(url);
+  } catch (cause) {
+    throw new Error(
+      `Network error fetching ABI for ${address}.${name} on ${network}`,
+      { cause },
+    );
+  }
 
   if (!response.ok) {
     if (response.status === 404) {
@@ -44,5 +52,12 @@ export async function fetchContractAbi(
     );
   }
 
-  return (await response.json()) as ClarityAbi;
+  try {
+    return (await response.json()) as ClarityAbi;
+  } catch (cause) {
+    throw new Error(
+      `Invalid JSON response for ${address}.${name} on ${network}`,
+      { cause },
+    );
+  }
 }
