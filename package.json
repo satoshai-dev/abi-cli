@@ -31,7 +31,7 @@
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.check.json",
     "lint": "eslint src",
     "clean": "rm -rf dist",
     "changeset": "changeset",
