@@ -16,6 +16,7 @@ export default defineConfig([
     entry: ['src/cli.ts'],
     format: ['esm'],
     define: { __VERSION__: JSON.stringify(pkg.version) },
+    dts: false,
     banner: { js: '#!/usr/bin/env node' },
     sourcemap: true,
     splitting: false,
