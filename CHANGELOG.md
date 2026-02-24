@@ -1,5 +1,18 @@
 # @satoshai/abi-cli
 
+## 0.2.1
+
+### Patch Changes
+
+- 96f7f3b: Clean up redundant package.json fields, remove duplicate test:unit script, add explicit dts: false to CLI tsup entry
+- 0b65d07: Add CLI validation for --output/--stdout with multiple contracts and improve fetch error messages
+- b2d9b90: Inline version at build time via tsup define instead of runtime createRequire
+- e87b275: Fix lint script to use eslint directory input instead of fragile shell glob
+- bb97e45: Make @stacks/transactions a required (non-optional) peer dependency
+- 01f5efd: Improve test coverage and fix typecheck to include test files
+- d79423b: Validate network parameter before fetch loop for fail-fast behavior
+- b2a03f9: Add comprehensive test coverage for fetch command (--stdout, --output, file writing, validation)
+
 ## 0.2.0
 
 ### Minor Changes
