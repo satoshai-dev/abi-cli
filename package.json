@@ -7,6 +7,7 @@
   "description": "CLI to fetch Stacks contract ABIs and generate TypeScript definitions.",
   "license": "MIT",
   "type": "module",
+  "packageManager": "pnpm@10.18.3",
   "bin": {
     "abi-cli": "./dist/cli.js"
   },
