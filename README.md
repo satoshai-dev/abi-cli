@@ -88,7 +88,68 @@ abi-cli fetch SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.amm-pool-v2-01,SP2C2YFP1
 # → writes amm-pool-v2-01.ts and arkadiko-swap-v2-1.ts
 ```
 
+### Sync — config-driven multi-contract sync
+
+For projects with multiple contracts, create a config file to keep ABIs in sync declaratively.
+
+Create `abi.config.json` in your project root:
+
+```json
+{
+  "outDir": "./src/abis",
+  "format": "ts",
+  "network": "mainnet",
+  "contracts": [
+    { "id": "SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.amm-pool-v2-01" },
+    { "id": "SP2C2YFP12AJZB1KD5HQ4XFRYGEK02H70HVK8GQH.arkadiko-swap-v2-1" },
+    { "id": "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.my-contract", "network": "testnet" }
+  ]
+}
+```
+
+Or use `abi.config.ts` for type-safe config with autocomplete:
+
+```typescript
+import type { AbiConfig } from '@satoshai/abi-cli';
+
+export default {
+  outDir: './src/abis',
+  format: 'ts',
+  network: 'mainnet',
+  contracts: [
+    { id: 'SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.amm-pool-v2-01' },
+    { id: 'SP2C2YFP12AJZB1KD5HQ4XFRYGEK02H70HVK8GQH.arkadiko-swap-v2-1' },
+  ],
+} satisfies AbiConfig;
+```
+
+Then run:
+
+```bash
+abi-cli sync
+# → reads abi.config.json (or .ts), writes all ABIs to outDir
+```
+
+Use `--config` / `-c` to point to a custom config path:
+
+```bash
+abi-cli sync --config ./configs/my-abis.json
+```
+
+#### Config schema
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `outDir` | `string` | yes | — | Output directory for generated files |
+| `format` | `"ts" \| "json"` | no | `"ts"` | Output format |
+| `network` | `string` | no | `"mainnet"` | Default network for all contracts |
+| `contracts` | `ContractEntry[]` | yes | — | List of contracts to sync |
+| `contracts[].id` | `string` | yes | — | Contract ID in `address.name` format |
+| `contracts[].network` | `string` | no | top-level `network` | Per-contract network override |
+
 ## Flags Reference
+
+### `abi-cli fetch`
 
 | Flag | Alias | Default | Description |
 |------|-------|---------|-------------|
@@ -96,6 +157,13 @@ abi-cli fetch SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.amm-pool-v2-01,SP2C2YFP1
 | `--output` | `-o` | `<contract-name>.<format>` | Output file path (single contract only) |
 | `--format` | `-f` | `ts` | Output format: `ts` or `json` |
 | `--stdout` | | `false` | Print to stdout instead of writing a file |
+| `--help` | | | Show help |
+
+### `abi-cli sync`
+
+| Flag | Alias | Default | Description |
+|------|-------|---------|-------------|
+| `--config` | `-c` | auto-discover | Path to config file |
 | `--help` | | | Show help |
 
 ## Programmatic API
@@ -114,6 +182,22 @@ const json = generateJson(abi);
 
 // Parse a contract ID string
 const { address, name } = parseContractId('SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.amm-pool-v2-01');
+```
+
+### Config loading
+
+```typescript
+import { loadConfig, validateConfig } from '@satoshai/abi-cli';
+import type { AbiConfig, ContractEntry } from '@satoshai/abi-cli';
+
+// Load and validate from file (auto-discovers abi.config.json/.ts)
+const config = await loadConfig();
+
+// Or from a specific path
+const config2 = await loadConfig('./my-config.json');
+
+// Validate a raw object
+const validated = validateConfig({ outDir: './abis', contracts: [{ id: 'SP1.token' }] });
 ```
 
 Types are re-exported from `@stacks/transactions`:

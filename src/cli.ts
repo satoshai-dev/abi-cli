@@ -1,5 +1,6 @@
 import { defineCommand, runMain } from 'citty';
 import { fetchCommand } from './commands/fetch.js';
+import { syncCommand } from './commands/sync.js';
 
 declare const __VERSION__: string;
 
@@ -11,6 +12,7 @@ const main = defineCommand({
   },
   subCommands: {
     fetch: fetchCommand,
+    sync: syncCommand,
   },
 });
 

@@ -44,7 +44,8 @@
     "node": ">=18"
   },
   "dependencies": {
-    "citty": "^0.1.6"
+    "citty": "^0.1.6",
+    "jiti": "^2.6.1"
   },
   "peerDependencies": {
     "@stacks/transactions": ">=7.0.0"
