@@ -38,6 +38,11 @@ export const fetchCommand = defineCommand({
       description: 'Print output to stdout instead of writing a file',
       default: false,
     },
+    typed: {
+      type: 'boolean',
+      description: 'Add satisfies ClarityAbi and export Abi type (requires @stacks/transactions as type-only dep)',
+      default: false,
+    },
   },
   async run({ args }) {
     const format = args.format as 'ts' | 'json';
@@ -70,7 +75,7 @@ export const fetchCommand = defineCommand({
 
       const output =
         format === 'ts'
-          ? generateTypescript(contractId, abi)
+          ? generateTypescript(contractId, abi, { typed: args.typed })
           : generateJson(abi);
 
       if (args.stdout) {

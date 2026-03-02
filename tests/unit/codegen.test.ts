@@ -26,6 +26,27 @@ describe('generateTypescript', () => {
   });
 });
 
+describe('generateTypescript with typed option', () => {
+  it('includes import type and satisfies ClarityAbi when typed is true', () => {
+    const output = generateTypescript('SP2P.nft-trait', sampleAbi, { typed: true });
+    expect(output).toContain("import type { ClarityAbi } from '@stacks/transactions';");
+    expect(output).toContain('as const satisfies ClarityAbi;');
+    expect(output).toContain('export type Abi = typeof abi;');
+  });
+
+  it('does not include satisfies when typed is false', () => {
+    const output = generateTypescript('SP2P.nft-trait', sampleAbi, { typed: false });
+    expect(output).not.toContain('satisfies');
+    expect(output).not.toContain('import type');
+    expect(output).not.toContain('export type Abi');
+  });
+
+  it('does not include satisfies when typed is omitted', () => {
+    const output = generateTypescript('SP2P.nft-trait', sampleAbi);
+    expect(output).not.toContain('satisfies');
+  });
+});
+
 describe('generateJson', () => {
   it('produces valid JSON', () => {
     const output = generateJson(sampleAbi);
