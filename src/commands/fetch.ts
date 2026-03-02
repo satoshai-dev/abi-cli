@@ -38,11 +38,6 @@ export const fetchCommand = defineCommand({
       description: 'Print output to stdout instead of writing a file',
       default: false,
     },
-    typed: {
-      type: 'boolean',
-      description: 'Add satisfies ClarityAbi and export Abi type (requires @stacks/transactions as type-only dep)',
-      default: false,
-    },
   },
   async run({ args }) {
     const format = args.format as 'ts' | 'json';
@@ -61,10 +56,6 @@ export const fetchCommand = defineCommand({
       );
     }
 
-    if (args.typed && format !== 'ts') {
-      throw new Error('--typed can only be used with --format ts.');
-    }
-
     if (args.stdout && contractIds.length > 1) {
       throw new Error(
         '--stdout cannot be used with multiple contracts. Fetch one contract at a time with --stdout.',
@@ -79,7 +70,7 @@ export const fetchCommand = defineCommand({
 
       const output =
         format === 'ts'
-          ? generateTypescript(contractId, abi, { typed: args.typed })
+          ? generateTypescript(contractId, abi)
           : generateJson(abi);
 
       if (args.stdout) {

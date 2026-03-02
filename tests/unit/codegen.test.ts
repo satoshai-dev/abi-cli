@@ -3,10 +3,27 @@ import { generateTypescript, generateJson, defaultFilename } from '../../src/cod
 import { sampleAbi } from './fixtures.js';
 
 describe('generateTypescript', () => {
-  it('produces valid TypeScript with as const', () => {
+  it('produces valid TypeScript with as const satisfies ClarityAbi', () => {
     const output = generateTypescript('SP2P.nft-trait', sampleAbi);
     expect(output).toContain('export const abi =');
-    expect(output).toContain('as const;');
+    expect(output).toContain('as const satisfies ClarityAbi;');
+  });
+
+  it('includes import type for ClarityAbi', () => {
+    const output = generateTypescript('SP2P.nft-trait', sampleAbi);
+    expect(output).toContain("import type { ClarityAbi } from '@stacks/transactions';");
+  });
+
+  it('exports a named Abi type', () => {
+    const output = generateTypescript('SP2P.nft-trait', sampleAbi);
+    expect(output).toContain('export type Abi = typeof abi;');
+  });
+
+  it('places import before header comments', () => {
+    const output = generateTypescript('SP2P.nft-trait', sampleAbi);
+    const importIndex = output.indexOf('import type');
+    const commentIndex = output.indexOf('// ABI for');
+    expect(importIndex).toBeLessThan(commentIndex);
   });
 
   it('includes the contract ID in a comment', () => {
@@ -23,34 +40,6 @@ describe('generateTypescript', () => {
     const output = generateTypescript('SP2P.nft-trait', sampleAbi);
     expect(output).toContain('"transfer"');
     expect(output).toContain('"get-owner"');
-  });
-});
-
-describe('generateTypescript with typed option', () => {
-  it('includes import type and satisfies ClarityAbi when typed is true', () => {
-    const output = generateTypescript('SP2P.nft-trait', sampleAbi, { typed: true });
-    expect(output).toContain("import type { ClarityAbi } from '@stacks/transactions';");
-    expect(output).toContain('as const satisfies ClarityAbi;');
-    expect(output).toContain('export type Abi = typeof abi;');
-  });
-
-  it('places import before header comments', () => {
-    const output = generateTypescript('SP2P.nft-trait', sampleAbi, { typed: true });
-    const importIndex = output.indexOf('import type');
-    const commentIndex = output.indexOf('// ABI for');
-    expect(importIndex).toBeLessThan(commentIndex);
-  });
-
-  it('does not include satisfies when typed is false', () => {
-    const output = generateTypescript('SP2P.nft-trait', sampleAbi, { typed: false });
-    expect(output).not.toContain('satisfies');
-    expect(output).not.toContain('import type');
-    expect(output).not.toContain('export type Abi');
-  });
-
-  it('does not include satisfies when typed is omitted', () => {
-    const output = generateTypescript('SP2P.nft-trait', sampleAbi);
-    expect(output).not.toContain('satisfies');
   });
 });
 

@@ -2,4 +2,4 @@
 "@satoshai/abi-cli": minor
 ---
 
-Add `--typed` flag to generate `satisfies ClarityAbi` and a named `Abi` type alias in TypeScript output
+Generated TypeScript now includes `satisfies ClarityAbi` for compile-time shape checking and exports a named `Abi` type alias
