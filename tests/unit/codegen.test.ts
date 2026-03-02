@@ -34,6 +34,13 @@ describe('generateTypescript with typed option', () => {
     expect(output).toContain('export type Abi = typeof abi;');
   });
 
+  it('places import before header comments', () => {
+    const output = generateTypescript('SP2P.nft-trait', sampleAbi, { typed: true });
+    const importIndex = output.indexOf('import type');
+    const commentIndex = output.indexOf('// ABI for');
+    expect(importIndex).toBeLessThan(commentIndex);
+  });
+
   it('does not include satisfies when typed is false', () => {
     const output = generateTypescript('SP2P.nft-trait', sampleAbi, { typed: false });
     expect(output).not.toContain('satisfies');

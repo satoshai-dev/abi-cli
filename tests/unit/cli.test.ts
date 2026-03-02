@@ -201,6 +201,18 @@ describe('fetchCommand', () => {
       ).rejects.toThrow('Invalid format "yaml"');
     });
 
+    it('throws when --typed is used with --format json', async () => {
+      await expect(
+        runFetch({
+          contract: 'SP2P.nft-trait',
+          network: 'mainnet',
+          format: 'json',
+          typed: true,
+          stdout: true,
+        }),
+      ).rejects.toThrow('--typed can only be used with --format ts');
+    });
+
     it('validates network before fetching', async () => {
       await expect(
         runFetch({

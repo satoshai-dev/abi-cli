@@ -61,6 +61,10 @@ export const fetchCommand = defineCommand({
       );
     }
 
+    if (args.typed && format !== 'ts') {
+      throw new Error('--typed can only be used with --format ts.');
+    }
+
     if (args.stdout && contractIds.length > 1) {
       throw new Error(
         '--stdout cannot be used with multiple contracts. Fetch one contract at a time with --stdout.',
