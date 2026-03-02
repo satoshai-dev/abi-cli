@@ -52,12 +52,43 @@ export async function fetchContractAbi(
     );
   }
 
+  let data: unknown;
   try {
-    return (await response.json()) as ClarityAbi;
+    data = await response.json();
   } catch (cause) {
     throw new Error(
       `Invalid JSON response for ${address}.${name} on ${network}`,
       { cause },
     );
+  }
+
+  assertAbiShape(data, `${address}.${name}`, network);
+
+  return data as ClarityAbi;
+}
+
+/**
+ * Validate that a parsed JSON response has the top-level ClarityAbi shape
+ * (non-null object with all required array fields). Does not validate
+ * the shape of individual array elements.
+ */
+function assertAbiShape(
+  data: unknown,
+  contractId: string,
+  network: string,
+): asserts data is ClarityAbi {
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+    throw new Error(
+      `Unexpected ABI response for ${contractId} on ${network}: expected an object`,
+    );
+  }
+
+  const required = ['functions', 'variables', 'maps', 'fungible_tokens', 'non_fungible_tokens'] as const;
+  for (const key of required) {
+    if (!Array.isArray((data as Record<string, unknown>)[key])) {
+      throw new Error(
+        `Unexpected ABI response for ${contractId} on ${network}: missing or invalid "${key}" array`,
+      );
+    }
   }
 }

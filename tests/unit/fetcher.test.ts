@@ -144,4 +144,43 @@ describe('fetchContractAbi', () => {
       fetchContractAbi('mainnet', 'SP123', 'broken'),
     ).rejects.toThrow('Invalid JSON response for SP123.broken on mainnet');
   });
+
+  it('throws when response is not an object', async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => 'not-an-object',
+    } as unknown as Response);
+
+    await expect(
+      fetchContractAbi('mainnet', 'SP123', 'bad'),
+    ).rejects.toThrow('Unexpected ABI response for SP123.bad on mainnet: expected an object');
+  });
+
+  it('throws when response is missing required arrays', async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({}),
+    } as unknown as Response);
+
+    await expect(
+      fetchContractAbi('mainnet', 'SP123', 'partial'),
+    ).rejects.toThrow('missing or invalid "functions" array');
+  });
+
+  it('throws when a required field is not an array', async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        functions: 'not-array',
+        variables: [],
+        maps: [],
+        fungible_tokens: [],
+        non_fungible_tokens: [],
+      }),
+    } as unknown as Response);
+
+    await expect(
+      fetchContractAbi('mainnet', 'SP123', 'bad-shape'),
+    ).rejects.toThrow('missing or invalid "functions" array');
+  });
 });
