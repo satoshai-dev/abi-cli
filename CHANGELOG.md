@@ -1,5 +1,15 @@
 # @satoshai/abi-cli
 
+## 0.4.0
+
+### Minor Changes
+
+- 18ef6e3: Generated TypeScript now includes `satisfies ClarityAbi` for compile-time shape checking and exports a named `Abi` type alias
+
+### Patch Changes
+
+- ca81d29: Add runtime validation on API response shape before `as ClarityAbi` cast
+
 ## 0.3.0
 
 ### Minor Changes
