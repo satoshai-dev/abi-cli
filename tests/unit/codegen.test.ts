@@ -3,10 +3,27 @@ import { generateTypescript, generateJson, defaultFilename } from '../../src/cod
 import { sampleAbi } from './fixtures.js';
 
 describe('generateTypescript', () => {
-  it('produces valid TypeScript with as const', () => {
+  it('produces valid TypeScript with as const satisfies ClarityAbi', () => {
     const output = generateTypescript('SP2P.nft-trait', sampleAbi);
     expect(output).toContain('export const abi =');
-    expect(output).toContain('as const;');
+    expect(output).toContain('as const satisfies ClarityAbi;');
+  });
+
+  it('includes import type for ClarityAbi', () => {
+    const output = generateTypescript('SP2P.nft-trait', sampleAbi);
+    expect(output).toContain("import type { ClarityAbi } from '@stacks/transactions';");
+  });
+
+  it('exports a named Abi type', () => {
+    const output = generateTypescript('SP2P.nft-trait', sampleAbi);
+    expect(output).toContain('export type Abi = typeof abi;');
+  });
+
+  it('places import before header comments', () => {
+    const output = generateTypescript('SP2P.nft-trait', sampleAbi);
+    const importIndex = output.indexOf('import type');
+    const commentIndex = output.indexOf('// ABI for');
+    expect(importIndex).toBeLessThan(commentIndex);
   });
 
   it('includes the contract ID in a comment', () => {

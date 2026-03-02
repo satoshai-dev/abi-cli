@@ -56,7 +56,7 @@ describe('fetchCommand', () => {
 
       const output = chunks.join('');
       expect(output).toContain('export const abi =');
-      expect(output).toContain('as const;');
+      expect(output).toContain('as const satisfies ClarityAbi;');
       expect(output).toContain('"transfer"');
 
       writeSpy.mockRestore();
