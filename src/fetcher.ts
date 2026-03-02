@@ -68,7 +68,9 @@ export async function fetchContractAbi(
 }
 
 /**
- * Validate that a parsed JSON response has the expected ClarityAbi shape.
+ * Validate that a parsed JSON response has the top-level ClarityAbi shape
+ * (non-null object with all required array fields). Does not validate
+ * the shape of individual array elements.
  */
 function assertAbiShape(
   data: unknown,

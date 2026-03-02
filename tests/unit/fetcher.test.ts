@@ -159,12 +159,12 @@ describe('fetchContractAbi', () => {
   it('throws when response is missing required arrays', async () => {
     vi.mocked(globalThis.fetch).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ functions: [] }),
+      json: async () => ({}),
     } as unknown as Response);
 
     await expect(
       fetchContractAbi('mainnet', 'SP123', 'partial'),
-    ).rejects.toThrow('missing or invalid "variables" array');
+    ).rejects.toThrow('missing or invalid "functions" array');
   });
 
   it('throws when a required field is not an array', async () => {
