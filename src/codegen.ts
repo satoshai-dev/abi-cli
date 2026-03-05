@@ -33,3 +33,26 @@ export function defaultFilename(contractId: string, format: 'ts' | 'json', nameO
   const name = nameOverride ?? contractId.split('.').pop() ?? contractId;
   return `${name}.${format}`;
 }
+
+/**
+ * Convert a kebab-case (or already camelCase) string to camelCase.
+ */
+export function toCamelCase(name: string): string {
+  return name.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+}
+
+/**
+ * Generate a barrel `index.ts` that re-exports all ABIs.
+ *
+ * Each entry maps to: `export { abi as <name>Abi } from './<filename>.js';`
+ */
+export function generateBarrel(entries: { name: string; filename: string }[]): string {
+  const lines = entries
+    .map(({ name, filename }) => {
+      const exportName = `${toCamelCase(name)}Abi`;
+      const modulePath = `./${filename.replace(/\.ts$/, '.js')}`;
+      return `export { abi as ${exportName} } from '${modulePath}';`;
+    });
+
+  return [...lines, ''].join('\n');
+}

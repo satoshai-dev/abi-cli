@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { loadConfig } from '../config.js';
 import { parseContractId, fetchContractAbi } from '../fetcher.js';
-import { generateTypescript, generateJson, defaultFilename } from '../codegen.js';
+import { generateTypescript, generateJson, defaultFilename, generateBarrel } from '../codegen.js';
 
 export const syncCommand = defineCommand({
   meta: {
@@ -25,6 +25,7 @@ export const syncCommand = defineCommand({
     await mkdir(outDir, { recursive: true });
 
     const failed: string[] = [];
+    const barrelEntries: { name: string; filename: string }[] = [];
     let synced = 0;
 
     for (const contract of config.contracts) {
@@ -40,16 +41,25 @@ export const syncCommand = defineCommand({
             ? generateTypescript(contract.id, abi)
             : generateJson(abi);
 
+        const resolvedName = contract.name ?? name;
         const filename = defaultFilename(contract.id, format, contract.name);
         const filepath = join(outDir, filename);
         await writeFile(filepath, output, 'utf-8');
         console.error(`Wrote ${filepath}`);
         synced++;
+        barrelEntries.push({ name: resolvedName, filename });
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         console.error(`Failed to sync ${contract.id}: ${message}`);
         failed.push(contract.id);
       }
+    }
+
+    if (format === 'ts' && barrelEntries.length > 0) {
+      const barrelContent = generateBarrel(barrelEntries);
+      const barrelPath = join(outDir, 'index.ts');
+      await writeFile(barrelPath, barrelContent, 'utf-8');
+      console.error(`Wrote ${barrelPath}`);
     }
 
     console.error(`\n${synced}/${config.contracts.length} contracts synced.`);
