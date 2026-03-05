@@ -1,5 +1,5 @@
 import { defineCommand } from 'citty';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { loadConfig } from '../config.js';
 import { parseContractId, fetchContractAbi } from '../fetcher.js';
@@ -16,6 +16,11 @@ export const syncCommand = defineCommand({
       alias: 'c',
       description: 'Path to config file (default: abi.config.json or abi.config.ts)',
     },
+    check: {
+      type: 'boolean',
+      description: 'Check if local files are up-to-date with on-chain ABIs (exit 1 if stale)',
+      default: false,
+    },
   },
   async run({ args }) {
     const config = await loadConfig(args.config);
@@ -25,6 +30,7 @@ export const syncCommand = defineCommand({
     await mkdir(outDir, { recursive: true });
 
     const failed: string[] = [];
+    const stale: string[] = [];
     const barrelEntries: { name: string; filename: string }[] = [];
     let synced = 0;
 
@@ -44,8 +50,26 @@ export const syncCommand = defineCommand({
         const resolvedName = contract.name ?? name;
         const filename = defaultFilename(contract.id, format, contract.name);
         const filepath = join(outDir, filename);
-        await writeFile(filepath, output, 'utf-8');
-        console.error(`Wrote ${filepath}`);
+
+        if (args.check) {
+          try {
+            const existing = await readFile(filepath, 'utf-8');
+            if (existing !== output) {
+              console.error(`Stale: ${filepath}`);
+              stale.push(filepath);
+            }
+          } catch (err) {
+            if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+              console.error(`Missing: ${filepath}`);
+              stale.push(filepath);
+            } else {
+              throw err;
+            }
+          }
+        } else {
+          await writeFile(filepath, output, 'utf-8');
+          console.error(`Wrote ${filepath}`);
+        }
         synced++;
         barrelEntries.push({ name: resolvedName, filename });
       } catch (err) {
@@ -55,14 +79,21 @@ export const syncCommand = defineCommand({
       }
     }
 
-    if (format === 'ts' && barrelEntries.length > 0) {
+    if (!args.check && format === 'ts' && barrelEntries.length > 0) {
       const barrelContent = generateBarrel(barrelEntries);
       const barrelPath = join(outDir, 'index.ts');
       await writeFile(barrelPath, barrelContent, 'utf-8');
       console.error(`Wrote ${barrelPath}`);
     }
 
-    console.error(`\n${synced}/${config.contracts.length} contracts synced.`);
+    if (args.check) {
+      console.error(`\n${synced}/${config.contracts.length} contracts checked.`);
+      if (stale.length > 0) {
+        process.exitCode = 1;
+      }
+    } else {
+      console.error(`\n${synced}/${config.contracts.length} contracts synced.`);
+    }
 
     if (failed.length > 0) {
       throw new Error(`Failed to sync: ${failed.join(', ')}`);

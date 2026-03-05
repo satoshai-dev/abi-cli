@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { syncCommand } from '../../src/commands/sync.js';
+import { generateTypescript } from '../../src/codegen.js';
 import { sampleAbi } from './fixtures.js';
 import { writeFile, mkdir, readFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
@@ -36,12 +37,14 @@ describe('syncCommand', () => {
     errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.mocked(writeFile).mockResolvedValue();
     vi.mocked(mkdir).mockResolvedValue(undefined);
+    process.exitCode = undefined;
   });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
     errorSpy.mockRestore();
     vi.restoreAllMocks();
+    process.exitCode = undefined;
   });
 
   it('syncs all contracts from config', async () => {
@@ -258,5 +261,107 @@ describe('syncCommand', () => {
       expect.stringContaining("export { abi as nftTraitAbi } from './nft-trait.js';"),
       'utf-8',
     );
+  });
+
+  describe('--check', () => {
+    it('exits 0 when all local files match', async () => {
+      const contractId = 'SP1.token-a';
+      const expected = generateTypescript(contractId, sampleAbi);
+      mockConfig({
+        outDir: './abis',
+        contracts: [{ id: contractId }],
+      });
+      mockFetchSuccess();
+      vi.mocked(readFile).mockResolvedValueOnce(expected);
+
+      await runSync({ config: '/tmp/abi.config.json', check: true });
+
+      expect(process.exitCode).toBeUndefined();
+      expect(writeFile).not.toHaveBeenCalled();
+    });
+
+    it('sets exitCode 1 when a file is stale', async () => {
+      mockConfig({
+        outDir: './abis',
+        contracts: [{ id: 'SP1.token-a' }],
+      });
+      mockFetchSuccess();
+      vi.mocked(readFile).mockResolvedValueOnce('old content');
+
+      await runSync({ config: '/tmp/abi.config.json', check: true });
+
+      expect(process.exitCode).toBe(1);
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Stale:'));
+      expect(writeFile).not.toHaveBeenCalled();
+    });
+
+    it('sets exitCode 1 when a file is missing', async () => {
+      mockConfig({
+        outDir: './abis',
+        contracts: [{ id: 'SP1.token-a' }],
+      });
+      mockFetchSuccess();
+      vi.mocked(readFile).mockRejectedValueOnce(
+        Object.assign(new Error('ENOENT'), { code: 'ENOENT' }),
+      );
+
+      await runSync({ config: '/tmp/abi.config.json', check: true });
+
+      expect(process.exitCode).toBe(1);
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Missing:'));
+      expect(writeFile).not.toHaveBeenCalled();
+    });
+
+    it('reports mixed pass/fail across multiple contracts', async () => {
+      const contractA = 'SP1.token-a';
+      const expectedA = generateTypescript(contractA, sampleAbi);
+      mockConfig({
+        outDir: './abis',
+        contracts: [{ id: contractA }, { id: 'SP2.token-b' }],
+      });
+      mockFetchSuccess(2);
+      vi.mocked(readFile).mockResolvedValueOnce(expectedA);
+      vi.mocked(readFile).mockResolvedValueOnce('old content');
+
+      await runSync({ config: '/tmp/abi.config.json', check: true });
+
+      expect(process.exitCode).toBe(1);
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Stale:'));
+      expect(writeFile).not.toHaveBeenCalled();
+    });
+
+    it('respects name alias for filename resolution', async () => {
+      const contractId = 'SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.amm-pool-v2-01';
+      const expected = generateTypescript(contractId, sampleAbi);
+      mockConfig({
+        outDir: './abis',
+        contracts: [{ id: contractId, name: 'amm-pool' }],
+      });
+      mockFetchSuccess();
+      vi.mocked(readFile).mockResolvedValueOnce(expected);
+
+      await runSync({ config: '/tmp/abi.config.json', check: true });
+
+      expect(readFile).toHaveBeenCalledWith(
+        join(resolve('./abis'), 'amm-pool.ts'),
+        'utf-8',
+      );
+      expect(process.exitCode).toBeUndefined();
+    });
+
+    it('does not generate barrel file', async () => {
+      const contractId = 'SP1.token-a';
+      const expected = generateTypescript(contractId, sampleAbi);
+      mockConfig({
+        outDir: './abis',
+        contracts: [{ id: contractId }],
+      });
+      mockFetchSuccess();
+      vi.mocked(readFile).mockResolvedValueOnce(expected);
+
+      await runSync({ config: '/tmp/abi.config.json', check: true });
+
+      expect(writeFile).not.toHaveBeenCalled();
+    });
   });
 });
