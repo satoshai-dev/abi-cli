@@ -54,7 +54,8 @@ describe('syncCommand', () => {
     await runSync({ config: '/tmp/abi.config.json' });
 
     expect(mkdir).toHaveBeenCalledWith(resolve('./abis'), { recursive: true });
-    expect(writeFile).toHaveBeenCalledTimes(2);
+    // 2 ABI files + 1 barrel index.ts
+    expect(writeFile).toHaveBeenCalledTimes(3);
     expect(writeFile).toHaveBeenCalledWith(
       join(resolve('./abis'), 'token-a.ts'),
       expect.stringContaining('export const abi ='),
@@ -152,8 +153,8 @@ describe('syncCommand', () => {
       'Failed to sync: SP2.token-b',
     );
 
-    // Still wrote 2 successful contracts
-    expect(writeFile).toHaveBeenCalledTimes(2);
+    // 2 successful ABI files + 1 barrel
+    expect(writeFile).toHaveBeenCalledTimes(3);
   });
 
   it('throws when config not found', async () => {
@@ -189,6 +190,72 @@ describe('syncCommand', () => {
     expect(writeFile).toHaveBeenCalledWith(
       join(resolve('./custom-out'), 'my-contract.ts'),
       expect.stringContaining('export const abi ='),
+      'utf-8',
+    );
+  });
+
+  it('generates barrel index.ts for ts format', async () => {
+    mockConfig({
+      outDir: './abis',
+      contracts: [{ id: 'SP1.amm-pool' }, { id: 'SP2.nft-trait' }],
+    });
+    mockFetchSuccess(2);
+
+    await runSync({ config: '/tmp/abi.config.json' });
+
+    // 2 ABI files + 1 barrel
+    expect(writeFile).toHaveBeenCalledTimes(3);
+    expect(writeFile).toHaveBeenCalledWith(
+      join(resolve('./abis'), 'index.ts'),
+      expect.stringContaining("export { abi as ammPoolAbi } from './amm-pool.js';"),
+      'utf-8',
+    );
+    expect(writeFile).toHaveBeenCalledWith(
+      join(resolve('./abis'), 'index.ts'),
+      expect.stringContaining("export { abi as nftTraitAbi } from './nft-trait.js';"),
+      'utf-8',
+    );
+  });
+
+  it('does NOT generate barrel for json format', async () => {
+    mockConfig({
+      outDir: './abis',
+      format: 'json',
+      contracts: [{ id: 'SP1.token-a' }, { id: 'SP2.token-b' }],
+    });
+    mockFetchSuccess(2);
+
+    await runSync({ config: '/tmp/abi.config.json' });
+
+    // Only 2 ABI files, no barrel
+    expect(writeFile).toHaveBeenCalledTimes(2);
+    expect(writeFile).not.toHaveBeenCalledWith(
+      join(resolve('./abis'), 'index.ts'),
+      expect.any(String),
+      'utf-8',
+    );
+  });
+
+  it('barrel uses name alias when available', async () => {
+    mockConfig({
+      outDir: './abis',
+      contracts: [
+        { id: 'SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.amm-pool-v2-01', name: 'amm-pool' },
+        { id: 'SP2.nft-trait' },
+      ],
+    });
+    mockFetchSuccess(2);
+
+    await runSync({ config: '/tmp/abi.config.json' });
+
+    expect(writeFile).toHaveBeenCalledWith(
+      join(resolve('./abis'), 'index.ts'),
+      expect.stringContaining("export { abi as ammPoolAbi } from './amm-pool.js';"),
+      'utf-8',
+    );
+    expect(writeFile).toHaveBeenCalledWith(
+      join(resolve('./abis'), 'index.ts'),
+      expect.stringContaining("export { abi as nftTraitAbi } from './nft-trait.js';"),
       'utf-8',
     );
   });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateTypescript, generateJson, defaultFilename } from '../../src/codegen.js';
+import { generateTypescript, generateJson, defaultFilename, toCamelCase, generateBarrel } from '../../src/codegen.js';
 import { sampleAbi } from './fixtures.js';
 
 describe('generateTypescript', () => {
@@ -68,5 +68,51 @@ describe('defaultFilename', () => {
 
   it('handles contract ID without dot', () => {
     expect(defaultFilename('standalone', 'ts')).toBe('standalone.ts');
+  });
+});
+
+describe('toCamelCase', () => {
+  it('converts kebab-case to camelCase', () => {
+    expect(toCamelCase('amm-pool')).toBe('ammPool');
+  });
+
+  it('converts multi-segment kebab-case', () => {
+    expect(toCamelCase('nft-trait-v2')).toBe('nftTraitV2');
+  });
+
+  it('leaves already camelCase unchanged', () => {
+    expect(toCamelCase('ammPool')).toBe('ammPool');
+  });
+
+  it('leaves single word unchanged', () => {
+    expect(toCamelCase('token')).toBe('token');
+  });
+});
+
+describe('generateBarrel', () => {
+  it('generates re-exports with camelCase + Abi suffix', () => {
+    const result = generateBarrel([
+      { name: 'amm-pool', filename: 'amm-pool.ts' },
+      { name: 'nft-trait', filename: 'nft-trait.ts' },
+    ]);
+
+    expect(result).toBe(
+      [
+        "export { abi as ammPoolAbi } from './amm-pool.js';",
+        "export { abi as nftTraitAbi } from './nft-trait.js';",
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it('uses .js extension in import paths', () => {
+    const result = generateBarrel([{ name: 'token', filename: 'token.ts' }]);
+    expect(result).toContain("from './token.js'");
+    expect(result).not.toContain('.ts');
+  });
+
+  it('handles single entry', () => {
+    const result = generateBarrel([{ name: 'my-contract', filename: 'my-contract.ts' }]);
+    expect(result).toBe("export { abi as myContractAbi } from './my-contract.js';\n");
   });
 });
