@@ -84,6 +84,62 @@ describe('validateConfig', () => {
     ).toThrow('Invalid contract ID');
   });
 
+  it('accepts contracts with name alias', () => {
+    const result = validateConfig({
+      outDir: './abis',
+      contracts: [
+        { id: 'SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.amm-pool-v2-01', name: 'amm-pool' },
+      ],
+    });
+
+    expect(result.contracts[0].name).toBe('amm-pool');
+  });
+
+  it('throws on invalid name value', () => {
+    expect(() =>
+      validateConfig({
+        outDir: './abis',
+        contracts: [{ id: 'SP1.token', name: '' }],
+      }),
+    ).toThrow('invalid "name" value');
+  });
+
+  it('throws on duplicate resolved names', () => {
+    expect(() =>
+      validateConfig({
+        outDir: './abis',
+        contracts: [
+          { id: 'SP1.token' },
+          { id: 'SP2.token' },
+        ],
+      }),
+    ).toThrow('Duplicate contract name "token"');
+  });
+
+  it('throws on duplicate names from alias collision', () => {
+    expect(() =>
+      validateConfig({
+        outDir: './abis',
+        contracts: [
+          { id: 'SP1.token-a', name: 'token' },
+          { id: 'SP2.token' },
+        ],
+      }),
+    ).toThrow('Duplicate contract name "token"');
+  });
+
+  it('allows same contract name when disambiguated with name alias', () => {
+    const result = validateConfig({
+      outDir: './abis',
+      contracts: [
+        { id: 'SP1.token', name: 'token-v1' },
+        { id: 'SP2.token', name: 'token-v2' },
+      ],
+    });
+
+    expect(result.contracts).toHaveLength(2);
+  });
+
   it('throws on non-object input', () => {
     expect(() => validateConfig('string')).toThrow('Config must be an object');
     expect(() => validateConfig(null)).toThrow('Config must be an object');

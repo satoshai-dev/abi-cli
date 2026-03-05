@@ -5,6 +5,7 @@ import { resolveNetwork } from './network.js';
 
 export interface ContractEntry {
   id: string;
+  name?: string;
   network?: string;
 }
 
@@ -52,6 +53,11 @@ export function validateConfig(raw: unknown): AbiConfig {
       throw new Error('Each contract entry must have an "id" string.');
     }
     parseContractId(e.id);
+    if (e.name !== undefined) {
+      if (typeof e.name !== 'string' || !e.name) {
+        throw new Error(`Contract "${e.id}" has an invalid "name" value. Must be a non-empty string.`);
+      }
+    }
     if (e.network !== undefined) {
       if (typeof e.network !== 'string') {
         throw new Error(`Contract "${e.id}" has an invalid "network" value.`);
@@ -60,14 +66,27 @@ export function validateConfig(raw: unknown): AbiConfig {
     }
   }
 
+  const contracts = (obj.contracts as Record<string, unknown>[]).map((c) => ({
+    id: c.id as string,
+    ...(c.name !== undefined ? { name: c.name as string } : {}),
+    ...(c.network !== undefined ? { network: c.network as string } : {}),
+  }));
+
+  // Check for duplicate resolved names (name or contract name from ID)
+  const seen = new Set<string>();
+  for (const c of contracts) {
+    const resolved = c.name ?? c.id.split('.').pop()!;
+    if (seen.has(resolved)) {
+      throw new Error(`Duplicate contract name "${resolved}". Use the "name" field to disambiguate.`);
+    }
+    seen.add(resolved);
+  }
+
   return {
     outDir: obj.outDir,
     format: obj.format as AbiConfig['format'],
     network: obj.network as string | undefined,
-    contracts: (obj.contracts as Record<string, unknown>[]).map((c) => ({
-      id: c.id as string,
-      ...(c.network !== undefined ? { network: c.network as string } : {}),
-    })),
+    contracts,
   };
 }
 

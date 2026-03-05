@@ -27,9 +27,9 @@ export function generateJson(abi: ClarityAbi): string {
 }
 
 /**
- * Derive a default output filename from a contract ID and format.
+ * Derive an output filename from an optional alias name or the contract ID.
  */
-export function defaultFilename(contractId: string, format: 'ts' | 'json'): string {
-  const name = contractId.split('.').pop() ?? contractId;
+export function defaultFilename(contractId: string, format: 'ts' | 'json', nameOverride?: string): string {
+  const name = nameOverride ?? contractId.split('.').pop() ?? contractId;
   return `${name}.${format}`;
 }
