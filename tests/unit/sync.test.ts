@@ -67,6 +67,24 @@ describe('syncCommand', () => {
     );
   });
 
+  it('uses name alias for output filename', async () => {
+    mockConfig({
+      outDir: './abis',
+      contracts: [
+        { id: 'SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.amm-pool-v2-01', name: 'amm-pool' },
+      ],
+    });
+    mockFetchSuccess();
+
+    await runSync({ config: '/tmp/abi.config.json' });
+
+    expect(writeFile).toHaveBeenCalledWith(
+      join(resolve('./abis'), 'amm-pool.ts'),
+      expect.stringContaining('export const abi ='),
+      'utf-8',
+    );
+  });
+
   it('creates outDir with recursive: true', async () => {
     mockConfig({
       outDir: './deep/nested/abis',

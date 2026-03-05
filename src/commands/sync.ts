@@ -40,7 +40,7 @@ export const syncCommand = defineCommand({
             ? generateTypescript(contract.id, abi)
             : generateJson(abi);
 
-        const filename = defaultFilename(contract.id, format);
+        const filename = defaultFilename(contract.id, format, contract.name);
         const filepath = join(outDir, filename);
         await writeFile(filepath, output, 'utf-8');
         console.error(`Wrote ${filepath}`);
