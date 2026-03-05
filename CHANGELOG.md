@@ -1,5 +1,17 @@
 # @satoshai/abi-cli
 
+## 0.5.0
+
+### Minor Changes
+
+- 8b94d68: Generate barrel `index.ts` file when syncing multiple contracts
+- 9f0976c: Add `--check` flag to `fetch` and `sync` commands for CI staleness detection
+- 7f7c443: Add optional `name` field to contract config entries for aliasing output filenames
+
+### Patch Changes
+
+- 1b5d222: Fix jiti MODULE_NOT_FOUND error when running sync without a config file
+
 ## 0.4.0
 
 ### Minor Changes
