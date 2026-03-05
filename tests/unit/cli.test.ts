@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fetchCommand } from '../../src/commands/fetch.js';
+import { generateTypescript } from '../../src/codegen.js';
 import { sampleAbi } from './fixtures.js';
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 vi.mock('node:fs/promises', () => ({
+  readFile: vi.fn(),
   writeFile: vi.fn(),
 }));
 
@@ -29,12 +31,14 @@ describe('fetchCommand', () => {
     globalThis.fetch = vi.fn();
     errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.mocked(writeFile).mockResolvedValue();
+    process.exitCode = undefined;
   });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
     errorSpy.mockRestore();
     vi.restoreAllMocks();
+    process.exitCode = undefined;
   });
 
   describe('--stdout', () => {
@@ -186,6 +190,74 @@ describe('fetchCommand', () => {
         expect.stringContaining('export const abi ='),
         'utf-8',
       );
+    });
+  });
+
+  describe('--check', () => {
+    it('exits 0 when local file matches generated output', async () => {
+      mockFetchSuccess();
+      const contractId = 'SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9.nft-trait';
+      const expected = generateTypescript(contractId, sampleAbi);
+      vi.mocked(readFile).mockResolvedValueOnce(expected);
+
+      await runFetch({
+        contract: contractId,
+        network: 'mainnet',
+        format: 'ts',
+        stdout: false,
+        check: true,
+      });
+
+      expect(process.exitCode).toBeUndefined();
+      expect(writeFile).not.toHaveBeenCalled();
+    });
+
+    it('sets exitCode 1 when local file differs', async () => {
+      mockFetchSuccess();
+      vi.mocked(readFile).mockResolvedValueOnce('old content');
+
+      await runFetch({
+        contract: 'SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9.nft-trait',
+        network: 'mainnet',
+        format: 'ts',
+        stdout: false,
+        check: true,
+      });
+
+      expect(process.exitCode).toBe(1);
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Stale:'));
+      expect(writeFile).not.toHaveBeenCalled();
+    });
+
+    it('sets exitCode 1 when local file is missing', async () => {
+      mockFetchSuccess();
+      vi.mocked(readFile).mockRejectedValueOnce(
+        Object.assign(new Error('ENOENT'), { code: 'ENOENT' }),
+      );
+
+      await runFetch({
+        contract: 'SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9.nft-trait',
+        network: 'mainnet',
+        format: 'ts',
+        stdout: false,
+        check: true,
+      });
+
+      expect(process.exitCode).toBe(1);
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Missing:'));
+      expect(writeFile).not.toHaveBeenCalled();
+    });
+
+    it('errors when used with --stdout', async () => {
+      await expect(
+        runFetch({
+          contract: 'SP1.token',
+          network: 'mainnet',
+          format: 'ts',
+          stdout: true,
+          check: true,
+        }),
+      ).rejects.toThrow('--check and --stdout are mutually exclusive');
     });
   });
 

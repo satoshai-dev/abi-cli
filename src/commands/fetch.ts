@@ -2,7 +2,7 @@ import { defineCommand } from 'citty';
 import { parseContractId, fetchContractAbi } from '../fetcher.js';
 import { generateTypescript, generateJson, defaultFilename } from '../codegen.js';
 import { resolveNetwork } from '../network.js';
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 export const fetchCommand = defineCommand({
@@ -38,11 +38,20 @@ export const fetchCommand = defineCommand({
       description: 'Print output to stdout instead of writing a file',
       default: false,
     },
+    check: {
+      type: 'boolean',
+      description: 'Check if local files are up-to-date with on-chain ABI (exit 1 if stale)',
+      default: false,
+    },
   },
   async run({ args }) {
     const format = args.format as 'ts' | 'json';
     if (format !== 'ts' && format !== 'json') {
       throw new Error(`Invalid format "${format}". Use "ts" or "json".`);
+    }
+
+    if (args.check && args.stdout) {
+      throw new Error('--check and --stdout are mutually exclusive.');
     }
 
     // Validate network early to fail fast before fetching any contracts
@@ -62,6 +71,8 @@ export const fetchCommand = defineCommand({
       );
     }
 
+    const stale: string[] = [];
+
     for (const contractId of contractIds) {
       const { address, name } = parseContractId(contractId);
 
@@ -73,7 +84,24 @@ export const fetchCommand = defineCommand({
           ? generateTypescript(contractId, abi)
           : generateJson(abi);
 
-      if (args.stdout) {
+      if (args.check) {
+        const filename = args.output ?? defaultFilename(contractId, format);
+        const filepath = resolve(filename);
+        try {
+          const existing = await readFile(filepath, 'utf-8');
+          if (existing !== output) {
+            console.error(`Stale: ${filepath}`);
+            stale.push(filepath);
+          }
+        } catch (err) {
+          if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+            console.error(`Missing: ${filepath}`);
+            stale.push(filepath);
+          } else {
+            throw err;
+          }
+        }
+      } else if (args.stdout) {
         process.stdout.write(output);
       } else {
         const filename = args.output ?? defaultFilename(contractId, format);
@@ -81,6 +109,10 @@ export const fetchCommand = defineCommand({
         await writeFile(filepath, output, 'utf-8');
         console.error(`Wrote ${filepath}`);
       }
+    }
+
+    if (args.check && stale.length > 0) {
+      process.exitCode = 1;
     }
   },
 });
