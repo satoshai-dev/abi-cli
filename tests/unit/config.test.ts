@@ -227,6 +227,23 @@ describe('loadConfig', () => {
     vi.doUnmock('jiti');
   });
 
+  it('treats MODULE_NOT_FOUND from jiti as file not found', async () => {
+    const notFound = Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
+    vi.mocked(readFile).mockRejectedValue(notFound);
+
+    // jiti throws MODULE_NOT_FOUND instead of ENOENT
+    const moduleNotFound = Object.assign(new Error('Cannot find module'), { code: 'MODULE_NOT_FOUND' });
+    const mockImport = vi.fn().mockRejectedValue(moduleNotFound);
+    const mockJiti = vi.fn().mockReturnValue({ import: mockImport });
+    vi.doMock('jiti', () => ({ default: mockJiti }));
+
+    const { loadConfig: loadConfigFresh } = await import('../../src/config.js');
+
+    await expect(loadConfigFresh()).rejects.toThrow('No config file found');
+
+    vi.doUnmock('jiti');
+  });
+
   it('throws on invalid JSON content', async () => {
     vi.mocked(readFile).mockResolvedValueOnce('not json {{{');
 

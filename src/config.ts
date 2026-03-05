@@ -133,9 +133,7 @@ async function loadFile(filepath: string): Promise<AbiConfig> {
 }
 
 function isFileNotFound(err: unknown): boolean {
-  return (
-    err instanceof Error &&
-    'code' in err &&
-    (err as NodeJS.ErrnoException).code === 'ENOENT'
-  );
+  if (!(err instanceof Error) || !('code' in err)) return false;
+  const code = (err as NodeJS.ErrnoException).code;
+  return code === 'ENOENT' || code === 'MODULE_NOT_FOUND';
 }
